@@ -1,0 +1,29 @@
+prebuilt_etc {
+    name: "privapp_whitelist_com.droidlogic.filebrowser",
+    vendor: true,
+    sub_dir: "permissions",
+    src: "com.droidlogic.filebrowser.xml",
+    filename_from_src: true,
+}
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "vendor_amlogic_common_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-Apache-2.0
+    default_applicable_licenses: ["vendor_amlogic_common_license"],
+}
+
+android_app {
+    name: "FileBrowser",
+
+    srcs: ["**/*.java"],
+    libs: ["droidlogic"],
+
+    proprietary: true,
+    manifest: "AndroidManifest.xml",
+
+    certificate: "platform",
+    sdk_version: "system_current",
+    static_libs: ["androidx.appcompat_appcompat"],
+}

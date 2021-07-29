@@ -13,16 +13,16 @@
      limitations under the License.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/layout_root_sort"
-	android:orientation="vertical"
-	android:layout_width="fill_parent"
-	android:layout_height="wrap_content"	
-	>
+    android:id="@+id/layout_root_sort"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    >
 
-	<ListView
-		android:id="@+id/sort_listview"
-    	android:layout_width="fill_parent"
-    	android:layout_height="fill_parent"		
-		/>  
+    <ListView
+        android:id="@+id/sort_listview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        />
 
 </LinearLayout>

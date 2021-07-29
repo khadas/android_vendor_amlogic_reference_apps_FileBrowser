@@ -91,6 +91,7 @@ import com.droidlogic.app.FileListManager;
 
 import android.bluetooth.BluetoothAdapter;
 import java.lang.System;
+import androidx.core.content.FileProvider;
 
 public class FileBrower extends Activity {
     public static final String TAG = "FileBrowser";
@@ -148,7 +149,9 @@ public class FileBrower extends Activity {
 
     private static FileListManager mFileListManager;
 
-    Comparator  mFileComparator = new Comparator<File>(){
+    private static final int RET_OK = 0;
+
+    Comparator  mFileComparator = new Comparator<File>() {
         @Override
         public int compare(File o1, File o2) {
             if (o1.isDirectory() && o2.isFile())
@@ -252,7 +255,7 @@ public class FileBrower extends Activity {
                     tvForPaste=(TextView)edit_dialog.findViewById(R.id.text_view_paste);
                 }
 
-                switch(msg.what) {
+                switch (msg.what) {
                     case 0: 	//set invisible
                         if ((edit_dialog != null) && (pb != null) && (tvForPaste != null)) {
                             pb.setVisibility(View.INVISIBLE);
@@ -422,6 +425,11 @@ public class FileBrower extends Activity {
             mListLoaded = false;
         }
 
+        File file = new File(cur_path);
+        if (!(file.exists())) {
+            cur_path = FileListManager.STORAGE;
+        }
+
         if (cur_path.equals(FileListManager.STORAGE)) {
             DeviceScan();
         }
@@ -453,10 +461,10 @@ public class FileBrower extends Activity {
         if (load_dialog != null)
             load_dialog.dismiss();
 
-        if(mListLoaded)
+        if (mListLoaded)
             mListLoaded = false;
 
-        if(!local_mode){
+        if (!local_mode) {
             db.deleteAllFileMark();
         }
         db.close();
@@ -694,7 +702,33 @@ public class FileBrower extends Activity {
         }
     }
 
+
+    public void install_apk (String apk_filepath) {
+        Intent installintent = new Intent();
+        File apkFile = new File(apk_filepath);
+        installintent.setAction (Intent.ACTION_VIEW);
+        Uri uri = FileProvider.getUriForFile(this,
+            "com.droidlogic.filebrowser.fileprovider",
+            apkFile);
+        installintent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        installintent.setDataAndType(uri, "application/vnd.android.package-archive");
+        startActivityForResult(installintent,RET_OK);
+    }
+
     protected void openFile(File f) {
+        String filePath = f.getAbsolutePath();
+        if (filePath.endsWith(".apk")) {
+            try {
+                install_apk(filePath);
+                return;
+            }
+            catch (ActivityNotFoundException e) {
+                Toast.makeText(FileBrower.this,
+                getText(R.string.Toast_msg_no_applicaton),
+                Toast.LENGTH_SHORT).show();
+            }
+        }
+
         // TODO Auto-generated method stub
         Intent intent = new Intent();
         intent.setAction(android.content.Intent.ACTION_VIEW);
@@ -738,7 +772,7 @@ public class FileBrower extends Activity {
         int length = 0;
         length = DeviceArray.length;
 
-        for (int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             if (FileOp.deviceExist(DeviceArray[i])) {
                 devList.add(DeviceArray[i]);
             }
@@ -867,15 +901,15 @@ public class FileBrower extends Activity {
                 sort_lv.setOnItemClickListener(new OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                         if (!cur_path.equals(FileListManager.STORAGE)) {
-                            if (pos == 0){
+                            if (pos == 0) {
                                 lv_sort_flag = "by_name";
                                 lv.setAdapter(getFileListAdapterSorted(cur_path, lv_sort_flag));
                             }
-                            else if (pos == 1){
+                            else if (pos == 1) {
                                 lv_sort_flag = "by_date";
                                 lv.setAdapter(getFileListAdapterSorted(cur_path, lv_sort_flag));
                             }
-                            else if (pos == 2){
+                            else if (pos == 2) {
                                 lv_sort_flag = "by_size";
                                 lv.setAdapter(getFileListAdapterSorted(cur_path, lv_sort_flag));
                             }
@@ -902,13 +936,13 @@ public class FileBrower extends Activity {
                 }
                 dialog.getWindow().setAttributes(lp);
 
-                if(mProgressHandler == null) return;
+                if (mProgressHandler == null) return;
                 mProgressHandler.sendMessage(Message.obtain(mProgressHandler, 0));
                 edit_lv = (ListView) edit_dialog.getWindow().findViewById(R.id.edit_listview);
-                if(edit_lv == null) return;
+                if (edit_lv == null) return;
                 edit_lv.setAdapter(getDialogListAdapter(EDIT_DIALOG_ID));
                 //edit_dialog.setCanceledOnTouchOutside(false);
-                edit_dialog.setOnDismissListener(new OnDismissListener(){
+                edit_dialog.setOnDismissListener(new OnDismissListener() {
                     public void onDismiss(DialogInterface dialog) {
                         FileOp.copy_cancel = true;
                     }
@@ -917,7 +951,7 @@ public class FileBrower extends Activity {
                 edit_lv.setOnItemClickListener(new OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                         if (!cur_path.equals(FileListManager.STORAGE)) {
-                            if(FileOp.IsBusy){
+                            if (FileOp.IsBusy) {
                                 return;
                             }
                             File wFile = new File(cur_path);
@@ -1528,7 +1562,7 @@ public class FileBrower extends Activity {
             break;
 
             case CLICK_DIALOG_ID:
-                for(int i = 0; i < open_mode.length; i++){
+                for (int i = 0; i < open_mode.length; i++) {
                     map = new HashMap<String, Object>();
                     map.put("item_type", R.drawable.dialog_item_img_unsel);
                     map.put("item_name", open_mode[i]);
@@ -1591,7 +1625,7 @@ public class FileBrower extends Activity {
         return str.equals(umount_path);
     }
 
-    private void scanAll(){
+    private void scanAll() {
         Intent intent = new Intent();
         intent.setClassName("com.android.providers.media","com.android.providers.media.MediaScannerService");
         Bundle argsa = new Bundle();

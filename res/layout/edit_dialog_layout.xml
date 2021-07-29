@@ -13,24 +13,24 @@
      limitations under the License.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/layout_root_edit"
-	android:orientation="vertical"
-	android:layout_width="fill_parent"
-	android:layout_height="wrap_content"	
-	>
-	<LinearLayout
-		android:orientation="vertical"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:gravity="left"
-		>
+    android:id="@+id/layout_root_edit"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    >
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="left"
+        >
 
-	<TextView
-        android:id="@+id/text_view_paste" 
+    <TextView
+        android:id="@+id/text_view_paste"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
-        
-	<ProgressBar android:id="@+id/edit_progress_bar"		
+
+    <ProgressBar android:id="@+id/edit_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -40,12 +40,12 @@
         android:max="100"
         android:progress="0"
         android:secondaryProgress="0"
-        /> 
-    </LinearLayout>	
-	<ListView
-		android:id="@+id/edit_listview"
-    	android:layout_width="fill_parent"
-    	android:layout_height="fill_parent"		
-		/>  
+        />
+    </LinearLayout>
+    <ListView
+        android:id="@+id/edit_listview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        />
 
 </LinearLayout>
