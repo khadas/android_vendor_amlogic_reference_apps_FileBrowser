@@ -18,8 +18,12 @@ android_app {
     name: "FileBrowser",
 
     srcs: ["**/*.java"],
-    libs: ["droidlogic"],
-
+    libs: [
+        "droidlogic.software.core",
+    ],
+    uses_libs: [
+        "droidlogic.software.core",
+    ],
     proprietary: true,
     manifest: "AndroidManifest.xml",
 
