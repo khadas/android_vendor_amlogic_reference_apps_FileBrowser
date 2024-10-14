@@ -49,6 +49,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -60,6 +61,7 @@ import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.view.Gravity;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
@@ -67,6 +69,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -78,6 +82,9 @@ import android.os.Environment;
 import android.os.storage.StorageVolume;
 //import android.os.storage.VolumeInfo;
 import android.content.BroadcastReceiver;
+import android.media.MediaScannerConnection;
+
+
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -124,6 +131,7 @@ public class FileBrower extends Activity {
     private AlertDialog edit_dialog;
     private AlertDialog click_dialog;
     private AlertDialog help_dialog;
+    private ProgressBar mLoadingProgress;
     private ListView sort_lv;
     private ListView edit_lv;
     private ListView click_lv;
@@ -685,6 +693,60 @@ public class FileBrower extends Activity {
         }
         db.close();
     }
+    private final class ScannPathTask extends AsyncTask<String, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            // We don't want to show the spinner every time we load images, because that would be
+            // annoying; instead, only start showing the spinner if loading the image has taken
+            // longer than 1 sec (ie 1000 ms)
+            if (mLoadingProgress == null) {
+                FrameLayout rootFrameLayout=(FrameLayout)findViewById(android.R.id.content);
+                FrameLayout.LayoutParams layoutParams=
+                    new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                layoutParams.gravity=Gravity.CENTER;
+                mLoadingProgress=new ProgressBar(FileBrower.this);
+                mLoadingProgress.setLayoutParams(layoutParams);
+                rootFrameLayout.addView(mLoadingProgress);
+                mLoadingProgress.setVisibility(View.GONE);
+            }
+
+            mLoadingProgress.postDelayed(() -> {
+                if (getStatus() != AsyncTask.Status.FINISHED && mLoadingProgress.getVisibility() == View.GONE) {
+                    mLoadingProgress.setVisibility(View.VISIBLE);
+                }
+            }, 500);
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+            Log.d(TAG, "doInBackground show image by image player service");
+            String filePath = params[0];
+            Log.i(TAG,"filePath = " + filePath);
+            MediaScanner mediaScanner = new MediaScanner(getBaseContext());
+            //String fileMimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("jpg");
+            String[] filePaths = new String[]{filePath};
+            //String[] mimeTypes = new String[]{fileMimeType};
+            mediaScanner.scanFiles(filePaths, null);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void arg) {
+            if (mLoadingProgress.getVisibility() == View.VISIBLE) {
+                mLoadingProgress.setVisibility(View.GONE);
+            }
+
+
+        }
+
+        @Override
+        protected void onCancelled() {
+            if (mLoadingProgress.getVisibility() == View.VISIBLE) {
+                mLoadingProgress.setVisibility(View.GONE);
+            }
+        }
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -701,6 +763,72 @@ public class FileBrower extends Activity {
                 break;
             }
         }
+    }
+
+    public class MediaScanner implements MediaScannerConnection.MediaScannerConnectionClient {
+
+        /**
+         *
+         */
+        private MediaScannerConnection mediaScanConn = null;
+
+        public MediaScanner(Context context) {
+
+            mediaScanConn = new MediaScannerConnection(context, this);
+        }
+
+        private int scanTimes = 0;
+        private String[] filePaths;
+        private String[] mimeTypes;
+
+
+        public void scanFiles(String[] filePaths, String[] mimeTypes) {
+            this.filePaths = filePaths;
+            this.mimeTypes = mimeTypes;
+            mediaScanConn.connect();
+        }
+
+
+        @Override
+        public void onMediaScannerConnected() {
+            for (int i = 0; i < filePaths.length; i++) {
+                Log.i(TAG,"onMediaScannerConnected " + filePaths[i]);
+                mediaScanConn.scanFile(filePaths[i], null);
+            }
+        }
+
+
+
+        @Override
+        public void onScanCompleted(String path, Uri uri) {
+            scanTimes ++;
+            if(scanTimes == filePaths.length) {
+                mediaScanConn.disconnect();
+                scanTimes = 0;
+            }
+
+            // TODO Auto-generated method stub
+            Intent intent = new Intent();
+            intent.setAction(android.content.Intent.ACTION_VIEW);
+            String type = "*/*";
+            File f = new File(path);
+            type = mFileListManager.CheckMediaType(f);
+            Log.i(TAG,"onScanCompleted file path = " + path);
+            Log.i(TAG,"onScanCompleted file path = " + uri.toString());
+            intent.setDataAndType(uri,type);
+            try {
+                startActivity(intent);
+            }
+            catch (ActivityNotFoundException e) {
+                Toast.makeText(FileBrower.this,
+                getText(R.string.Toast_msg_no_applicaton),
+                Toast.LENGTH_SHORT).show();
+            }
+
+            filePaths = null;
+            mimeTypes = null;
+        }
+
     }
 
 
@@ -729,21 +857,8 @@ public class FileBrower extends Activity {
                 Toast.LENGTH_SHORT).show();
             }
         }
-
-        // TODO Auto-generated method stub
-        Intent intent = new Intent();
-        intent.setAction(android.content.Intent.ACTION_VIEW);
-        String type = "*/*";
-        type = mFileListManager.CheckMediaType(f);
-        intent.setDataAndType(Uri.fromFile(f),type);
-        try {
-            startActivity(intent);
-        }
-        catch (ActivityNotFoundException e) {
-            Toast.makeText(FileBrower.this,
-            getText(R.string.Toast_msg_no_applicaton),
-            Toast.LENGTH_SHORT).show();
-        }
+        ScannPathTask task = new ScannPathTask();
+        task.execute(filePath);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
